@@ -12,8 +12,11 @@ line 33 as a string.
 For security reasons I will not be committing all the time.
 
 #To-do's
-1. Fix recycler view not clearing and showing duplicates everytime onload
-2. Add detail activity onclick for movie
-3. add preferences/menu
+1. add preferences/menu that allows for users to select top rated or popular movies
+to be displayed.
+2. clean up code and add comments
+3. (optional) add the feature to display more movies when scrolling
+past the bottom of the screen.
+4. (optional) add Tablet layouts
 
 

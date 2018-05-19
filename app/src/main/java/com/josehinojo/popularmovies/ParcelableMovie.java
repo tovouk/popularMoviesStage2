@@ -5,6 +5,16 @@ import android.os.Parcelable;
 
 public class ParcelableMovie implements Parcelable {
 
+    /*
+    I used the following link to help model my adapter and Movie item
+    https://www.androidhive.info/2016/01/android-working-with-recycler-view/amp/
+
+    How parcelables work
+    https://stackoverflow.com/questions/7181526/how-can-i-make-my-custom-objects-parcelable
+    https://stackoverflow.com/questions/10107442/android-how-to-pass-parcelable-object-to-intent-and-use-getparcelable-method-of
+
+     */
+
     private int id;
     private String title;
     private String releaseDate;
