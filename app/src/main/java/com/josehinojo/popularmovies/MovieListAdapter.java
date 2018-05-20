@@ -2,10 +2,8 @@ package com.josehinojo.popularmovies;
 
 import android.content.Context;
 import android.graphics.Point;
-import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,11 +14,9 @@ import android.widget.LinearLayout;
 
 import com.squareup.picasso.Picasso;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static android.content.res.Configuration.ORIENTATION_LANDSCAPE;
-import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
 
 public class MovieListAdapter extends RecyclerView.Adapter<MovieListAdapter.MyViewHolder> {
 
@@ -112,7 +108,8 @@ public class MovieListAdapter extends RecyclerView.Adapter<MovieListAdapter.MyVi
 
         holder.posterIMG.setLayoutParams(layoutParams);
 
-        Picasso.get().load(movie.getPosterIMG()).fit().error(R.drawable.ic_launcher_background).into(holder.posterIMG);
+        Picasso.get().load(movie.getPosterIMG()).fit().placeholder(R.drawable.ic_launcher_foreground)
+                .error(R.drawable.ic_launcher_background).into(holder.posterIMG);
     }
     public void update(){
         notifyDataSetChanged();

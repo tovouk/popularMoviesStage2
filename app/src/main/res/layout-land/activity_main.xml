@@ -8,8 +8,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".MainActivity">
     <android.support.constraint.ConstraintLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
         <android.support.constraint.Guideline
             android:layout_width="wrap_content"
@@ -20,7 +20,7 @@
         <android.support.constraint.Guideline
             android:layout_width="wrap_content"
             android:layout_height="42dp"
-            app:layout_constraintGuide_percent=".2"
+            app:layout_constraintGuide_percent=".37"
             android:orientation="vertical"
             android:id="@+id/guide1"/>
 
@@ -29,7 +29,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/error"
-            android:visibility="gone"
+            android:visibility="visible"
             app:layout_constraintTop_toBottomOf="@+id/guide"
             app:layout_constraintLeft_toRightOf="@+id/guide1"
             tools:layout_editor_absoluteX="93dp"
@@ -44,7 +44,7 @@
         <android.support.constraint.Guideline
             android:layout_width="wrap_content"
             android:layout_height="42dp"
-            app:layout_constraintGuide_percent=".35"
+            app:layout_constraintGuide_percent=".45"
             android:orientation="vertical"
             android:id="@+id/guide4"/>
 
