@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <!--
+    I used the following link to learn about dropdown menus
+    https://stackoverflow.com/questions/8312344/how-to-add-a-dropdown-item-on-the-action-bar
+    -->
+    <item
+        android:title="@string/sort"
+        android:orderInCategory="1"
+        app:showAsAction="always">
+        <menu>
+            <item
+                android:id="@+id/menuSortPopular"
+                android:title="@string/popular"
+                />
+            <item
+                android:id="@+id/menuSortRating"
+                android:title="@string/topRated" />
+        </menu>
+    </item>
+</menu>

@@ -2,4 +2,15 @@
     <string name="app_name">PopularMovies</string>
     <string name="error_message">An error has occurred!</string>
     <string name="poster">Movie Poster</string>
+    <string name="release_date">Release Date:\n</string>
+    <string name="average_vote">Average Vote</string>
+    <string name="vote">Vote</string>
+    <string name="movieTitle">Title</string>
+
+    <string name="credits">Info from https://www.themoviedb.org/</string>
+
+    <string name="popular">Sort by Popular</string>
+    <string name="topRated">Sort by Top Rated</string>
+    <string name="sort">Sort By &#x25BC;</string>
+
 </resources>

@@ -34,6 +34,7 @@ public class MovieListAdapter extends RecyclerView.Adapter<MovieListAdapter.MyVi
     Context context;
     final private ListItemClickListener itemClickListener;
 
+
     public interface ListItemClickListener{
         void onListItemClick(ParcelableMovie movie);
     }

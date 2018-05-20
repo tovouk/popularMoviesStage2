@@ -8,9 +8,12 @@ import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -31,22 +34,19 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
 
     private static final String MOVIELIST_KEY = "movieList";
 
-    static int pageNumber = 1;
-
     final static String MOVIEDB_BASE_URL = "http://api.themoviedb.org/3/movie/";
-    final static String POPULAR = "popular";
-    final static String TOPRATED = "top_rated";
+    static String sortOption = "popular";
     final static String API_KEY = "[YOUR_API_KEY_HERE]";
-    final static String PAGE_NUMBER = "&language=en-US&page=" + pageNumber;
+    static int pageNumber = 1;
+    static String PAGE_NUMBER = "&language=en-US&page=" + pageNumber;
     final static String IMAGE_URL = "http://image.tmdb.org/t/p/original";
+
+    static String ASYNC_URL =  MOVIEDB_BASE_URL + sortOption + API_KEY + PAGE_NUMBER;
 
     private static ArrayList<ParcelableMovie> movieList = new ArrayList<>();
     private static RecyclerView movie_recycler_view;
     private static MovieListAdapter mListAdapter;
 
-
-
-    static TextView messageTextView;
     static ProgressBar loadingIndicator;
 
     static Context context;
@@ -81,13 +81,8 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
         movie_recycler_view.setAdapter(mListAdapter);
 
         if(savedInstanceState == null || !savedInstanceState.containsKey(MOVIELIST_KEY)) {
-
-            try {
-                URL url = new URL(MOVIEDB_BASE_URL + POPULAR + API_KEY + PAGE_NUMBER);
-                new MovieAsyncTask().execute(url);
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
+            pageNumber = 1;
+            getJson();
         }else{
             showMovies();
             movieList = savedInstanceState.getParcelableArrayList(MOVIELIST_KEY);
@@ -97,12 +92,57 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
 
     }
 
+    /*
+    Refreshed Memory on menus via older Lesson
+    https://github.com/udacity/ud851-Exercises/blob/student/Lesson02-GitHub-Repo-Search/T02.02-Solution-AddMenu/app/src/main/java/com/example/android/datafrominternet/MainActivity.java
+     */
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        int itemId = item.getItemId();
+
+        if (itemId == R.id.menuSortPopular) {
+            pageNumber = 1;
+            movieList.clear();
+            mListAdapter.notifyDataSetChanged();
+            sortOption = "popular";
+            ASYNC_URL =  MOVIEDB_BASE_URL + sortOption + API_KEY + PAGE_NUMBER;
+            getJson();
+            return true;
+
+        }else if(itemId == R.id.menuSortRating){
+            pageNumber = 1;
+            movieList.clear();
+            mListAdapter.notifyDataSetChanged();
+            sortOption = "top_rated";
+            ASYNC_URL =  MOVIEDB_BASE_URL + sortOption + API_KEY + PAGE_NUMBER;
+            getJson();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+
+    }
+
+    //Went back to my Growing With Google Challenge Scholarship course to review onSaveInstanceState
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putParcelableArrayList(MOVIELIST_KEY,movieList);
         super.onSaveInstanceState(outState);
     }
 
+
+    /*
+    Used the following link to help me with passing parcelables
+    https://stackoverflow.com/questions/10107442/android-how-to-pass-parcelable-object-to-intent-and-use-getparcelable-method-of
+     */
     @Override
     public void onListItemClick(ParcelableMovie movie) {
         Log.i("movie backdrop",movie.getBackdropIMG());
@@ -156,7 +196,7 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
                 try {
                     JSONObject json = new JSONObject(s);
                     JSONArray results = new JSONArray(json.getString("results"));
-                    for(int i = 0;i<results.length();i++){
+                    for(int i = determineMoviePosition();i<results.length();i++){
                         JSONObject movieObj = results.getJSONObject(i);
                         int id = movieObj.getInt("id");
                         String title = movieObj.getString("title");
@@ -169,12 +209,43 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
                                 backdrop,vote,overview);
                         movieList.add(movie);
                         mListAdapter.notifyItemChanged(i);
+                        pageNumber++;
                     }
 
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
         }
+    }
+
+    //written this way for page prep for stage 2
+    public static int determineMoviePosition(){
+        int startPosition = 0;
+        if(pageNumber ==1){
+            startPosition = 0;
+        }else if (pageNumber > 1){
+            startPosition = pageNumber * 20 - 20;
+        }else{
+            Toast.makeText(context,"Could not determine position...let the developer know",
+                    Toast.LENGTH_SHORT).show();
+        }
+        return startPosition;
+    }
+
+    /*
+    preps ASYNC_URL for async task
+    Written this way to prepare for stage 2
+    */
+    public void getJson(){
+        PAGE_NUMBER = "&language=en-US&page=" + pageNumber;
+        ASYNC_URL =  MOVIEDB_BASE_URL + sortOption + API_KEY + PAGE_NUMBER;
+        try {
+            URL url = new URL(ASYNC_URL);
+            new MovieAsyncTask().execute(url);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public static void showLoader(){
