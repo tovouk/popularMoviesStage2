@@ -86,19 +86,32 @@
 
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/movie_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="16dp"
-                android:layout_marginStart="16dp"
-                app:layout_goneMarginLeft="16dp"
-                android:layout_marginEnd="16dp"
-                android:text="@string/movieTitle"
-                android:textAppearance="@style/TextAppearance.AppCompat.Display1"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="#fff" />
 
+
+        <TextView
+            android:id="@+id/movie_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="16dp"
+            android:paddingStart="16dp"
+            android:paddingRight="16dp"
+            android:paddingEnd="16dp"
+            android:text="@string/movieTitle"
+            android:background="#664433"
+            android:textAppearance="@style/TextAppearance.AppCompat.Display1"
+            android:textColor="#fff"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="#fff"
+            android:layout_marginBottom="8dp" />
 
         <TextView
             android:layout_width="match_parent"
@@ -110,9 +123,89 @@
             android:paddingEnd="8dp"
             android:paddingBottom="16dp"/>
 
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="#fff" />
+
+        <TextView
+            android:id="@+id/trailerLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="16dp"
+            android:paddingStart="16dp"
+            android:paddingRight="16dp"
+            android:paddingEnd="16dp"
+            android:text="@string/trailerLabel"
+            android:background="#664433"
+            android:textAppearance="@style/TextAppearance.AppCompat.Display1"
+            android:textColor="#fff"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="#fff"
+            android:layout_marginBottom="8dp" />
+
+        <android.support.v7.widget.RecyclerView
+            android:layout_width="match_parent"
+            android:layout_height="375dp"
+            android:scrollbars="vertical"
+            android:id="@+id/Trailers"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="16dp"
+            android:orientation="vertical"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="#fff" />
+
+        <TextView
+            android:id="@+id/reviewLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="16dp"
+            android:paddingStart="16dp"
+            android:paddingRight="16dp"
+            android:paddingEnd="16dp"
+            android:text="@string/reviews"
+            android:background="#664433"
+            android:textAppearance="@style/TextAppearance.AppCompat.Display1"
+            android:textColor="#fff"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="#fff"
+            android:layout_marginBottom="8dp" />
+
+        <android.support.v7.widget.RecyclerView
+            android:layout_width="match_parent"
+            android:layout_height="350dp"
+            android:scrollbars="vertical"
+            android:id="@+id/Reviews"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="16dp"
+            android:orientation="vertical"/>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
             android:text="@string/credits"/>
 
     </LinearLayout>

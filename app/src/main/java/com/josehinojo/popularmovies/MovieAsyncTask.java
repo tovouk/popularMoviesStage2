@@ -1,12 +1,16 @@
 package com.josehinojo.popularmovies;
 
+import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -16,18 +20,26 @@ import java.util.Scanner;
 
 import static com.josehinojo.popularmovies.MainActivity.IMAGE_URL;
 import static com.josehinojo.popularmovies.MainActivity.determineMoviePosition;
+import static com.josehinojo.popularmovies.MainActivity.showError;
 import static com.josehinojo.popularmovies.MainActivity.showMovies;
 
 public class MovieAsyncTask extends AsyncTask<URL,Void,String> {
-
+    private Context context;
+    private TextView errorMessage;
     private MovieListAdapter mListAdapter;
     private ArrayList<ParcelableMovie> movieList = new ArrayList<>();
     private int pageNumber;
 
+    // Used the following link to display toast if api is incorrect
+    // https://stackoverflow.com/questions/9118015/how-to-correctly-start-activity-from-postexecute-in-android
+    protected MovieAsyncTask(Context context){
+        this.context = context;
+    }
 
-    public void setMovieParams(MovieListAdapter movieListAdapter,ArrayList<ParcelableMovie> movieList){
+    public void setMovieParams(MovieListAdapter movieListAdapter,ArrayList<ParcelableMovie> movieList,TextView errorMessage){
         this.mListAdapter = movieListAdapter;
         this.movieList = movieList;
+        this.errorMessage = errorMessage;
     }
     public void setPageNumber(int num){
         this.pageNumber = num;
@@ -55,6 +67,8 @@ public class MovieAsyncTask extends AsyncTask<URL,Void,String> {
                 Log.e("Error: ","no data was retrieved");
                 return null;
             }
+        }catch(FileNotFoundException fileNotFoundException){
+            return "Error!";
         } catch (IOException e) {
             Log.e("Error: ","connection cannot be established");
             e.printStackTrace();
@@ -74,6 +88,14 @@ public class MovieAsyncTask extends AsyncTask<URL,Void,String> {
                 https://developer.android.com/reference/org/json/JSONArray
                 https://developer.android.com/reference/org/json/JSONObject
                  */
+        if (s.equals("Error!")) {
+            if(movieList.size() == 0 || movieList == null ){
+                errorMessage.setText("Error retrieving data");
+                Toast.makeText(context,"Error! Check if your api key is valid",Toast.LENGTH_SHORT).show();
+                showError();
+            }
+            return;
+        }
         try {
             JSONObject json = new JSONObject(s);
             JSONArray results = new JSONArray(json.getString("results"));

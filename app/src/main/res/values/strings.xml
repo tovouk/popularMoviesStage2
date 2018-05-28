@@ -7,6 +7,8 @@
     <string name="movieTitle">Title</string>
     <string name="moviePoster">Movie Poster</string>
     <string name="movieBackdrop">Movie Backdrop</string>
+    <string name="trailerLabel">Trailers </string>
+    <string name="reviews">Reviews</string>
 
     <string name="error">An Error has occurred: </string>
     <string name="network_error">No Network Connection detected!</string>

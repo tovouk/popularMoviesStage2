@@ -8,7 +8,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -33,6 +32,7 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
     static String sortOption = "popular";
     final static String API_QUERY = "?api_key=";
     // v get an api key from themoviedb.org and place it here v
+    //[YOUR_API_KEY_HERE]
     final static String API_KEY = "[YOUR_API_KEY_HERE]";
     static int pageNumber = 1;
     static String PAGE_NUMBER = "&language=en-US&page=" + pageNumber;
@@ -154,7 +154,6 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
      */
     @Override
     public void onListItemClick(ParcelableMovie movie) {
-        Log.i("movie backdrop",movie.getBackdropIMG());
         Intent intent = new Intent(getBaseContext(), DetailActivity.class);
         intent.putExtra("sentMovie", movie);
         startActivity(intent);
@@ -201,17 +200,19 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
             ASYNC_URL = MOVIEDB_BASE_URL + sortOption + API_QUERY + API_KEY + PAGE_NUMBER;
             try {
                 URL url = new URL(ASYNC_URL);
-                MovieAsyncTask movieAsyncTask = new MovieAsyncTask();
-                movieAsyncTask.setMovieParams(mListAdapter, movieList);
+                MovieAsyncTask movieAsyncTask = new MovieAsyncTask(getApplicationContext());
+                movieAsyncTask.setMovieParams(mListAdapter, movieList, errorMessage);
                 movieAsyncTask.setPageNumber(pageNumber);
                 movieAsyncTask.execute(url);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             }
+
         }else{
             errorMessage.setText(R.string.network_error);
             showError();
         }
+
     }
 
     public static void showError(){
