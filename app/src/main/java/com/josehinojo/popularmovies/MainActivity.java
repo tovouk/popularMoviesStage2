@@ -26,7 +26,7 @@ import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
 public class MainActivity extends AppCompatActivity implements MovieListAdapter.ListItemClickListener {
 
     private static final String MOVIELIST_KEY = "movieList";
-    private static final String ERROR_KEY = "error";
+    private static final String ERROR_KEY = "error"; 
 
     final static String MOVIEDB_BASE_URL = "http://api.themoviedb.org/3/movie/";
     static String sortOption = "popular";
