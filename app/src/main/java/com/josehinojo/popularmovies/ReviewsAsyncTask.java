@@ -48,6 +48,7 @@ public class ReviewsAsyncTask extends AsyncTask<URL,Void,String> {
             scanner.useDelimiter("\\A");
             boolean hasInput = scanner.hasNext();
             if(hasInput){
+                httpURLConnection.disconnect();
                 return scanner.next();
 
             }else{
@@ -59,9 +60,6 @@ public class ReviewsAsyncTask extends AsyncTask<URL,Void,String> {
         } catch (IOException e) {
             Log.e("Error: ","connection cannot be established");
             e.printStackTrace();
-        }finally {
-            assert httpURLConnection != null;
-            httpURLConnection.disconnect();
         }
         return null;
     }

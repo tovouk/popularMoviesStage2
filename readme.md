@@ -12,13 +12,12 @@ line 36 as a string.
 For security reasons I will not be committing all the time.
 
 ##### To do's
-1. Fix connection leak
-2. Add Favorites Functionalities
+1. Add Favorites Functionality
 
 undecided:
 1. Add more page options/ load more movies for MainActivity when scrolling to the bottom
 2. Add see all reviews option for movies with more than one page
 
-# Current Progress
+# Current Progress (outdated)
 [![Current Progress](https://img.youtube.com/vi/Rtb7UTbSj9Y/0.jpg)](http://www.youtube.com/watch?v=Rtb7UTbSj9Y/0 "Current Progress")
 

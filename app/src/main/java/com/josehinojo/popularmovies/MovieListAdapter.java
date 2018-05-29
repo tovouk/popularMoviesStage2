@@ -108,7 +108,7 @@ public class MovieListAdapter extends RecyclerView.Adapter<MovieListAdapter.MyVi
 
         holder.posterIMG.setLayoutParams(layoutParams);
 
-        Picasso.get().load(movie.getPosterIMG()).fit().placeholder(R.drawable.ic_launcher_foreground)
+        Picasso.get().load(movie.getPosterIMG()).fit().placeholder(R.mipmap.movie_foreground)
                 .error(R.drawable.ic_launcher_background).into(holder.posterIMG);
     }
     public void update(){

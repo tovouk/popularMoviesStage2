@@ -15,7 +15,10 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Display;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RatingBar;
@@ -60,6 +63,8 @@ ReviewListAdapter.ListItemClickListener{
     @BindView(R.id.averageVote) TextView averageVote;
     @BindView(R.id.overview) TextView overview;
     @BindView(R.id.releaseDate) TextView releaseDate;
+    @BindView(R.id.favBtn) ImageButton favBtn;
+    boolean clicked;
 
     ArrayList<ParcelableTrailer> trailerList = new ArrayList<>();
     RecyclerView trailer_recycler_view;
@@ -79,6 +84,16 @@ ReviewListAdapter.ListItemClickListener{
         trailer_recycler_view = findViewById(R.id.Trailers);
         review_recycler_view = findViewById(R.id.Reviews);
         ButterKnife.bind(this);
+        if(savedInstanceState != null){
+            clicked = savedInstanceState.getBoolean("clicked");
+            if(clicked){
+                favBtn.setImageResource(R.drawable.heart);
+            }else{
+                favBtn.setImageResource(R.drawable.pinkheart);
+            }
+        }else{
+            clicked = false;
+        }
         context = getApplicationContext();
 
         tListAdapter = new TrailerListAdapter(trailerList,this);
@@ -187,5 +202,21 @@ ReviewListAdapter.ListItemClickListener{
     @Override
     public void onListItemClick(ParcelableReview review) {
 
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean("clicked",clicked);
+    }
+
+    public void toggleFavorite(View view){
+        if(clicked){
+            clicked = false;
+            favBtn.setImageResource(R.drawable.pinkheart);
+        }else{
+            clicked = true;
+            favBtn.setImageResource(R.drawable.heart);
+        }
     }
 }
