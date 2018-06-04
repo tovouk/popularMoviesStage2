@@ -12,6 +12,7 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
+import com.josehinojo.popularmovies.database.FavoriteMovie;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
@@ -119,5 +120,7 @@ public class MovieListAdapter extends RecyclerView.Adapter<MovieListAdapter.MyVi
     public int getItemCount() {
         return movieList.size();
     }
+
+
 
 }

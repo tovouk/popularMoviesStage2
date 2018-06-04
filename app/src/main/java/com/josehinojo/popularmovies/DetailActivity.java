@@ -25,6 +25,8 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.josehinojo.popularmovies.database.FavoriteMovie;
+import com.josehinojo.popularmovies.database.MovieDatabase;
 import com.squareup.picasso.Picasso;
 
 import java.net.MalformedURLException;
@@ -64,6 +66,7 @@ ReviewListAdapter.ListItemClickListener{
     @BindView(R.id.overview) TextView overview;
     @BindView(R.id.releaseDate) TextView releaseDate;
     @BindView(R.id.favBtn) ImageButton favBtn;
+    @BindView(R.id.favLabel) TextView favLabel;
     boolean clicked;
 
     ArrayList<ParcelableTrailer> trailerList = new ArrayList<>();
@@ -75,12 +78,13 @@ ReviewListAdapter.ListItemClickListener{
     Context context;
     public String id;
 
+    MovieDatabase db;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
-
         trailer_recycler_view = findViewById(R.id.Trailers);
         review_recycler_view = findViewById(R.id.Reviews);
         ButterKnife.bind(this);
@@ -88,8 +92,10 @@ ReviewListAdapter.ListItemClickListener{
             clicked = savedInstanceState.getBoolean("clicked");
             if(clicked){
                 favBtn.setImageResource(R.drawable.heart);
+                favLabel.setText(R.string.favorite);
             }else{
                 favBtn.setImageResource(R.drawable.pinkheart);
+                favLabel.setText(R.string.unfavorite);
             }
         }else{
             clicked = false;
@@ -144,6 +150,29 @@ ReviewListAdapter.ListItemClickListener{
 
             Picasso.get().load(movie.getBackdropIMG()).into(backdrop);
             Picasso.get().load(movie.getPosterIMG()).into(poster);
+
+            db = MovieDatabase.getDatabaseInstance(context);
+
+            AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                @Override
+                public void run() {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            FavoriteMovie favoriteMovie = db.favoriteDao().getMovieById(movie.getId());
+                            if (favoriteMovie == null){
+                                clicked = false;
+                                favBtn.setImageResource(R.drawable.heart);
+                                favLabel.setText(R.string.favorite);
+                            }else if (favoriteMovie.getId() == movie.getId()){
+                                clicked = true;
+                                favBtn.setImageResource(R.drawable.pinkheart);
+                                favLabel.setText(R.string.unfavorite);
+                            }
+                        }
+                    });
+                }
+            });
 
     }
 
@@ -211,12 +240,53 @@ ReviewListAdapter.ListItemClickListener{
     }
 
     public void toggleFavorite(View view){
+        int favId = movie.getId();
+        String favTitle = movie.getTitle();
+        String favOverview = movie.getPlot();
+        float favRating = (float)movie.getVoteAverage();
+        final FavoriteMovie favMovie = new FavoriteMovie(favId,favTitle,favOverview,favRating);
+
         if(clicked){
+
+            AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                @Override
+                public void run() {
+                    db.favoriteDao().deleteMovie(favMovie);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            changeImage();
+                        }
+                    });
+                }
+            });
+        }else{
+
+            AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                @Override
+                public void run() {
+                    db.favoriteDao().insertMovie(favMovie);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            changeImage();
+                        }
+                    });
+                }
+            });
+
+        }
+    }
+
+    public void changeImage(){
+        if (clicked){
             clicked = false;
-            favBtn.setImageResource(R.drawable.pinkheart);
+            favBtn.setImageResource(R.drawable.heart);
+            favLabel.setText(R.string.favorite);
         }else{
             clicked = true;
-            favBtn.setImageResource(R.drawable.heart);
+            favBtn.setImageResource(R.drawable.pinkheart);
+            favLabel.setText(R.string.unfavorite);
         }
     }
 }

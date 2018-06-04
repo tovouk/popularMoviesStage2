@@ -87,6 +87,12 @@
                             android:background="@color/colorPrimary"
                             android:onClick="toggleFavorite"
                             android:src="@drawable/heart"/>
+                        <TextView
+                            android:id="@+id/favLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:text="@string/favorite"/>
 
                 </LinearLayout>
 

@@ -16,23 +16,27 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.josehinojo.popularmovies.database.FavoriteMovie;
+import com.josehinojo.popularmovies.database.MovieDatabase;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 
 import static android.content.res.Configuration.ORIENTATION_LANDSCAPE;
 import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
 
-public class MainActivity extends AppCompatActivity implements MovieListAdapter.ListItemClickListener {
+public class MainActivity extends AppCompatActivity implements MovieListAdapter.ListItemClickListener, FavoritesAdapter.ListItemClickListener{
 
     private static final String MOVIELIST_KEY = "movieList";
+    private static final String FAV_LIST_KEY = "favMovieList";
     private static final String ERROR_KEY = "error";
 
     final static String MOVIEDB_BASE_URL = "http://api.themoviedb.org/3/movie/";
     static String sortOption = "popular";
     final static String API_QUERY = "?api_key=";
     // v get an api key from themoviedb.org and place it here v
-    //[YOUR_API_KEY_HERE]
     final static String API_KEY = "[YOUR_API_KEY_HERE]";
     static int pageNumber = 1;
     static String PAGE_NUMBER = "&language=en-US&page=" + pageNumber;
@@ -43,18 +47,29 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
     private static Button againBTN;
 
     private static ArrayList<ParcelableMovie> movieList = new ArrayList<>();
+    private static ArrayList<FavoriteMovie> favMovieList = new ArrayList<>();
     private  static RecyclerView movie_recycler_view;
+    int spancount =2;
     private  MovieListAdapter mListAdapter;
 
      static ProgressBar loadingIndicator;
 
      static Context context;
 
+     private MovieDatabase db;
+     private FavoritesAdapter favoritesAdapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         context = getApplicationContext();
+
+        db = MovieDatabase.getDatabaseInstance(context);
+        favMovieList = (ArrayList<FavoriteMovie>) db.favoriteDao().loadAllMovies();
+        favoritesAdapter = new FavoritesAdapter(favMovieList,this);
+
         errorMessage = findViewById(R.id.error);
         againBTN = findViewById(R.id.againBTN);
         loadingIndicator = findViewById(R.id.loadingIndicator);
@@ -66,7 +81,6 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
         I used the following to help understand gridlayoutmanager better
         https://www.journaldev.com/13792/android-gridlayoutmanager-example
          */
-        int spancount =2;
         /*
         if orientation changes adjust grid columns
         https://developer.android.com/reference/android/content/res/Configuration#orientation
@@ -82,12 +96,21 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
         movie_recycler_view.setLayoutManager(layoutManager);
         movie_recycler_view.setAdapter(mListAdapter);
 
-        if(savedInstanceState == null || !savedInstanceState.containsKey(MOVIELIST_KEY)) {
+        if(savedInstanceState == null) {
             pageNumber = 1;
             getJson();
-        }else{
+        }else if(savedInstanceState.containsKey(FAV_LIST_KEY)){
             showMovies();
+            spancount = 1;
+            layoutManager = new GridLayoutManager(getApplicationContext(),spancount);
+            movie_recycler_view.setLayoutManager(layoutManager);
+            favMovieList = savedInstanceState.getParcelableArrayList(FAV_LIST_KEY);
+            movie_recycler_view.setAdapter(favoritesAdapter);
+        }else if(savedInstanceState.containsKey(MOVIELIST_KEY)){
+            showMovies();
+            favMovieList.clear();
             movieList = savedInstanceState.getParcelableArrayList(MOVIELIST_KEY);
+            movie_recycler_view.setAdapter(mListAdapter);
             if(savedInstanceState.containsKey(ERROR_KEY)){
                 errorMessage.setText(savedInstanceState.getString(ERROR_KEY));
                 showError();
@@ -95,6 +118,7 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
         }
 
         mListAdapter.update();
+        favoritesAdapter.update();
 
     }
 
@@ -115,22 +139,60 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
         int itemId = item.getItemId();
 
         if (itemId == R.id.menuSortPopular) {
+            if(getResources().getConfiguration().orientation == ORIENTATION_PORTRAIT) {
+                spancount = 2;
+            }else if(getResources().getConfiguration().orientation == ORIENTATION_LANDSCAPE) {
+                spancount = 3;
+            }
+            RecyclerView.LayoutManager  layoutManager = new GridLayoutManager(getApplicationContext(),spancount);
+            movie_recycler_view.setLayoutManager(layoutManager);
             pageNumber = 1;
+            favMovieList.clear();
             movieList.clear();
             mListAdapter.notifyDataSetChanged();
+            movie_recycler_view.setAdapter(mListAdapter);
             sortOption = "popular";
             ASYNC_URL =  MOVIEDB_BASE_URL + sortOption + API_QUERY + API_KEY + PAGE_NUMBER;
             getJson();
             return true;
 
         }else if(itemId == R.id.menuSortRating){
+            if(getResources().getConfiguration().orientation == ORIENTATION_PORTRAIT) {
+                spancount = 2;
+            }else if(getResources().getConfiguration().orientation == ORIENTATION_LANDSCAPE) {
+                spancount = 3;
+            }
+            RecyclerView.LayoutManager  layoutManager = new GridLayoutManager(getApplicationContext(),spancount);
+            movie_recycler_view.setLayoutManager(layoutManager);
             pageNumber = 1;
+            favMovieList.clear();
             movieList.clear();
             mListAdapter.notifyDataSetChanged();
+            movie_recycler_view.setAdapter(mListAdapter);
             sortOption = "top_rated";
             ASYNC_URL =  MOVIEDB_BASE_URL + sortOption + API_QUERY + API_KEY + PAGE_NUMBER;
             getJson();
             return true;
+        }else if(itemId == R.id.menuSortFavorite){
+            spancount = 1;
+            RecyclerView.LayoutManager  layoutManager = new GridLayoutManager(getApplicationContext(),spancount);
+            movie_recycler_view.setLayoutManager(layoutManager);
+            movieList.clear();
+            AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                @Override
+                public void run() {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            favMovieList = (ArrayList<FavoriteMovie>)db.favoriteDao().loadAllMovies();
+                            favoritesAdapter.setMovieList(favMovieList);
+                            favoritesAdapter.update();
+                            movie_recycler_view.setAdapter(favoritesAdapter);
+                        }
+                    });
+                }
+            });
+
         }
 
         return super.onOptionsItemSelected(item);
@@ -141,6 +203,9 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putParcelableArrayList(MOVIELIST_KEY,movieList);
+        if(favMovieList.size() > 0){
+            outState.putParcelableArrayList(FAV_LIST_KEY,favMovieList);
+        }
         if(errorMessage.getVisibility() == View.VISIBLE){
             outState.putString(ERROR_KEY,errorMessage.getText().toString());
         }
@@ -237,4 +302,8 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
         movie_recycler_view.setVisibility(View.VISIBLE);
     }
 
+    @Override
+    public void onListItemClick(FavoriteMovie movie) {
+        Toast.makeText(context,"Great choice in movies!",Toast.LENGTH_SHORT).show();
+    }
 }

@@ -19,6 +19,10 @@
 
     <string name="popular">Sort by Popular</string>
     <string name="topRated">Sort by Top Rated</string>
+    <string name="favorites">Sort By Favorites</string>
     <string name="sort">Sort By &#x25BC;</string>
+
+    <string name="favorite">Favorite</string>
+    <string name="unfavorite">Unfavorite</string>
 
 </resources>
