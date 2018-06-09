@@ -9,8 +9,12 @@
     <string name="movieBackdrop">Movie Backdrop</string>
     <string name="trailerLabel">Trailers </string>
     <string name="reviews">Reviews</string>
+    <string name="favButton">Favorite Button</string>
+    <string name="trailerImg">Trailer Thumbnail</string>
+    <string name="placeholder">Placeholder</string>
 
     <string name="error">An Error has occurred: </string>
+    <string name="error2">Error retrieving data</string>
     <string name="network_error">No Network Connection detected!</string>
     <string name="errBTN">Try again!</string>
 

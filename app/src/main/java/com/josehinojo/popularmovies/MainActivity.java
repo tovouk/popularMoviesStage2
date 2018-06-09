@@ -1,13 +1,18 @@
 package com.josehinojo.popularmovies;
 
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -47,10 +52,12 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
     private static Button againBTN;
 
     private static ArrayList<ParcelableMovie> movieList = new ArrayList<>();
-    private static ArrayList<FavoriteMovie> favMovieList = new ArrayList<>();
+    private static LiveData<List<FavoriteMovie>> favMovieList;
     private  static RecyclerView movie_recycler_view;
     int spancount =2;
     private  MovieListAdapter mListAdapter;
+
+    public boolean favoritesSelected;
 
      static ProgressBar loadingIndicator;
 
@@ -67,8 +74,15 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
         context = getApplicationContext();
 
         db = MovieDatabase.getDatabaseInstance(context);
-        favMovieList = (ArrayList<FavoriteMovie>) db.favoriteDao().loadAllMovies();
-        favoritesAdapter = new FavoritesAdapter(favMovieList,this);
+        MainViewModel viewModel = ViewModelProviders.of(this).get(MainViewModel.class);
+        viewModel.getFavMovies().observe(this, new Observer<List<FavoriteMovie>>() {
+            @Override
+            public void onChanged(@Nullable List<FavoriteMovie> favoriteMovies) {
+                Log.d(MainActivity.class.getSimpleName(),"Retriving movies from LivaData in ViewModel");
+                favoritesAdapter.setMovieList(favoriteMovies);
+            }
+        });
+        favoritesAdapter = new FavoritesAdapter(this);
 
         errorMessage = findViewById(R.id.error);
         againBTN = findViewById(R.id.againBTN);
@@ -99,16 +113,16 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
         if(savedInstanceState == null) {
             pageNumber = 1;
             getJson();
-        }else if(savedInstanceState.containsKey(FAV_LIST_KEY)){
+        } else if(savedInstanceState.containsKey("favoritesSelected")){
             showMovies();
             spancount = 1;
             layoutManager = new GridLayoutManager(getApplicationContext(),spancount);
             movie_recycler_view.setLayoutManager(layoutManager);
-            favMovieList = savedInstanceState.getParcelableArrayList(FAV_LIST_KEY);
             movie_recycler_view.setAdapter(favoritesAdapter);
-        }else if(savedInstanceState.containsKey(MOVIELIST_KEY)){
+            favoritesSelected = true;
+        }
+            else if(savedInstanceState.containsKey(MOVIELIST_KEY)){
             showMovies();
-            favMovieList.clear();
             movieList = savedInstanceState.getParcelableArrayList(MOVIELIST_KEY);
             movie_recycler_view.setAdapter(mListAdapter);
             if(savedInstanceState.containsKey(ERROR_KEY)){
@@ -118,7 +132,6 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
         }
 
         mListAdapter.update();
-        favoritesAdapter.update();
 
     }
 
@@ -139,6 +152,7 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
         int itemId = item.getItemId();
 
         if (itemId == R.id.menuSortPopular) {
+            favoritesSelected = false;
             if(getResources().getConfiguration().orientation == ORIENTATION_PORTRAIT) {
                 spancount = 2;
             }else if(getResources().getConfiguration().orientation == ORIENTATION_LANDSCAPE) {
@@ -147,7 +161,6 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
             RecyclerView.LayoutManager  layoutManager = new GridLayoutManager(getApplicationContext(),spancount);
             movie_recycler_view.setLayoutManager(layoutManager);
             pageNumber = 1;
-            favMovieList.clear();
             movieList.clear();
             mListAdapter.notifyDataSetChanged();
             movie_recycler_view.setAdapter(mListAdapter);
@@ -157,6 +170,7 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
             return true;
 
         }else if(itemId == R.id.menuSortRating){
+            favoritesSelected = false;
             if(getResources().getConfiguration().orientation == ORIENTATION_PORTRAIT) {
                 spancount = 2;
             }else if(getResources().getConfiguration().orientation == ORIENTATION_LANDSCAPE) {
@@ -165,7 +179,6 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
             RecyclerView.LayoutManager  layoutManager = new GridLayoutManager(getApplicationContext(),spancount);
             movie_recycler_view.setLayoutManager(layoutManager);
             pageNumber = 1;
-            favMovieList.clear();
             movieList.clear();
             mListAdapter.notifyDataSetChanged();
             movie_recycler_view.setAdapter(mListAdapter);
@@ -174,24 +187,12 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
             getJson();
             return true;
         }else if(itemId == R.id.menuSortFavorite){
+            favoritesSelected = true;
             spancount = 1;
             RecyclerView.LayoutManager  layoutManager = new GridLayoutManager(getApplicationContext(),spancount);
             movie_recycler_view.setLayoutManager(layoutManager);
             movieList.clear();
-            AppExecutors.getInstance().diskIO().execute(new Runnable() {
-                @Override
-                public void run() {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            favMovieList = (ArrayList<FavoriteMovie>)db.favoriteDao().loadAllMovies();
-                            favoritesAdapter.setMovieList(favMovieList);
-                            favoritesAdapter.update();
-                            movie_recycler_view.setAdapter(favoritesAdapter);
-                        }
-                    });
-                }
-            });
+            movie_recycler_view.setAdapter(favoritesAdapter);
 
         }
 
@@ -202,10 +203,16 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
     //Went back to my Growing With Google Challenge Scholarship course to review onSaveInstanceState
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        outState.putParcelableArrayList(MOVIELIST_KEY,movieList);
-        if(favMovieList.size() > 0){
-            outState.putParcelableArrayList(FAV_LIST_KEY,favMovieList);
+        if(favoritesSelected){
+            outState.putBoolean("favoritesSelected",favoritesSelected);
         }
+        if(movieList.size() > 0){
+            outState.putParcelableArrayList(MOVIELIST_KEY,movieList);
+
+        }
+//        if(favMovieList.size() > 0){
+//            outState.putParcelableArrayList(FAV_LIST_KEY,favMovieList);
+//        }
         if(errorMessage.getVisibility() == View.VISIBLE){
             outState.putString(ERROR_KEY,errorMessage.getText().toString());
         }

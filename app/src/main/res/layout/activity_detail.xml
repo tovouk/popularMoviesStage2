@@ -79,6 +79,7 @@
                         android:textAppearance="@style/TextAppearance.AppCompat.Display1" />
 
                         <ImageButton
+                            android:contentDescription="@string/favButton"
                             android:id="@+id/favBtn"
                             android:layout_width="100dp"
                             android:layout_height="100dp"

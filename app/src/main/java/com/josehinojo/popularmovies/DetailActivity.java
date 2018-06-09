@@ -1,23 +1,21 @@
 package com.josehinojo.popularmovies;
 
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.graphics.Point;
-import android.graphics.drawable.ColorDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -115,64 +113,81 @@ ReviewListAdapter.ListItemClickListener{
         review_recycler_view.setAdapter(rListAdapter);
 
 
-            movie = (ParcelableMovie) getIntent().getExtras().getParcelable("sentMovie");
+        movie = (ParcelableMovie) getIntent().getExtras().getParcelable("sentMovie");
 
-            id = Integer.toString(movie.getId());
-            getTrailersAndReviews();
+        id = Integer.toString(movie.getId());
+        getTrailersAndReviews();
 
-            WindowManager wm = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-            Display display = wm.getDefaultDisplay();
-            Point size = new Point();
-            display.getSize(size);
+        WindowManager wm = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+        Display display = wm.getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
 
         /*
         change backdrop height on orientation change
         https://developer.android.com/reference/android/content/res/Configuration#orientation
          */
-            if(getResources().getConfiguration().orientation == ORIENTATION_PORTRAIT) {
-                size.y /= 3.33;
-            }else if(getResources().getConfiguration().orientation == ORIENTATION_LANDSCAPE) {
-                size.y /= 2;
-            }
-            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(size.x, size.y);
-            backdrop.setLayoutParams(layoutParams);
+        if(getResources().getConfiguration().orientation == ORIENTATION_PORTRAIT) {
+            size.y /= 3.33;
+        }else if(getResources().getConfiguration().orientation == ORIENTATION_LANDSCAPE) {
+            size.y /= 2;
+        }
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(size.x, size.y);
+        backdrop.setLayoutParams(layoutParams);
 
-            title.setText(movie.getTitle());
+        title.setText(movie.getTitle());
 
-            average.setRating((float)movie.getVoteAverage()/2);
+        average.setRating((float)movie.getVoteAverage()/2);
 
-            averageVote.setText(Double.toString(movie.getVoteAverage()));
+        averageVote.setText(Double.toString(movie.getVoteAverage()));
 
-            overview.setText(movie.getPlot());
+        overview.setText(movie.getPlot());
 
-            releaseDate.setText("Release Date:\n" +
-                    movie.getReleaseDate());
+        releaseDate.setText("Release Date:\n" +
+                movie.getReleaseDate());
 
-            Picasso.get().load(movie.getBackdropIMG()).into(backdrop);
-            Picasso.get().load(movie.getPosterIMG()).into(poster);
+        Picasso.get().load(movie.getBackdropIMG()).into(backdrop);
+        Picasso.get().load(movie.getPosterIMG()).into(poster);
 
-            db = MovieDatabase.getDatabaseInstance(context);
-
-            AppExecutors.getInstance().diskIO().execute(new Runnable() {
-                @Override
-                public void run() {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            FavoriteMovie favoriteMovie = db.favoriteDao().getMovieById(movie.getId());
-                            if (favoriteMovie == null){
-                                clicked = false;
-                                favBtn.setImageResource(R.drawable.heart);
-                                favLabel.setText(R.string.favorite);
-                            }else if (favoriteMovie.getId() == movie.getId()){
-                                clicked = true;
-                                favBtn.setImageResource(R.drawable.pinkheart);
-                                favLabel.setText(R.string.unfavorite);
-                            }
-                        }
-                    });
+        db = MovieDatabase.getDatabaseInstance(context);
+        AddFavoriteMovieViewModelFactory factory = new AddFavoriteMovieViewModelFactory(db,movie.getId());
+        final AddFavoriteMovieViewModel viewModel = ViewModelProviders.of(this,factory).
+                get(AddFavoriteMovieViewModel.class);
+        viewModel.getMovie().observe(this, new Observer<FavoriteMovie>() {
+            @Override
+            public void onChanged(@Nullable FavoriteMovie favoriteMovie) {
+                if (favoriteMovie == null){
+                            clicked = false;
+                            favBtn.setImageResource(R.drawable.heart);
+                            favLabel.setText(R.string.favorite);
+                }else if (favoriteMovie.getId() == movie.getId()){
+                    clicked = true;
+                    favBtn.setImageResource(R.drawable.pinkheart);
+                    favLabel.setText(R.string.unfavorite);
                 }
-            });
+            }
+        });
+//        AppExecutors.getInstance().diskIO().execute(new Runnable() {
+//            @Override
+//            public void run() {
+//                runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+////                        FavoriteMovie favoriteMovie = db.favoriteDao().getMovieById(movie.getId());
+//
+//                        if (favoriteMovie == null){
+//                            clicked = false;
+//                            favBtn.setImageResource(R.drawable.heart);
+//                            favLabel.setText(R.string.favorite);
+//                        }else if (favoriteMovie.getId() == movie.getId()){
+//                            clicked = true;
+//                            favBtn.setImageResource(R.drawable.pinkheart);
+//                            favLabel.setText(R.string.unfavorite);
+//                        }
+//                    }
+//                });
+//            }
+//        });
 
     }
 
@@ -245,7 +260,6 @@ ReviewListAdapter.ListItemClickListener{
         String favOverview = movie.getPlot();
         float favRating = (float)movie.getVoteAverage();
         final FavoriteMovie favMovie = new FavoriteMovie(favId,favTitle,favOverview,favRating);
-
         if(clicked){
 
             AppExecutors.getInstance().diskIO().execute(new Runnable() {

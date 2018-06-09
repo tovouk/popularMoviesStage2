@@ -1,24 +1,17 @@
 package com.josehinojo.popularmovies;
 
 import android.content.Context;
-import android.graphics.Point;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
-import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
-import static android.content.res.Configuration.ORIENTATION_LANDSCAPE;
 import static com.josehinojo.popularmovies.DetailActivity.THUMB_URL_END;
 import static com.josehinojo.popularmovies.DetailActivity.THUMB_URL_START;
 

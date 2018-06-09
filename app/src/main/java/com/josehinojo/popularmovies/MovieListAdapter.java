@@ -12,7 +12,6 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
-import com.josehinojo.popularmovies.database.FavoriteMovie;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;

@@ -47,10 +47,13 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.MyVi
         }
     }
 
-    public FavoritesAdapter(List<FavoriteMovie> moviesList, ListItemClickListener listener) {
+    public FavoritesAdapter(@NonNull List<FavoriteMovie> moviesList, ListItemClickListener listener) {
         this.movieList = moviesList;
         itemClickListener = listener;
 
+    }
+    public FavoritesAdapter(ListItemClickListener listener){
+        itemClickListener = listener;
     }
 
     @NonNull

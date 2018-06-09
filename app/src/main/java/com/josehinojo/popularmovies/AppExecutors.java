@@ -8,7 +8,10 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public class AppExecutors {
+    /*
+       Used new lessons in Android Architecture components to model this file
 
+    */
     private static final Object LOCK = new Object();
     private static AppExecutors sInstance;
     private final Executor diskIO;

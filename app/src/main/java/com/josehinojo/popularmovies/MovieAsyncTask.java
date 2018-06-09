@@ -90,7 +90,7 @@ public class MovieAsyncTask extends AsyncTask<URL,Void,String> {
                  */
         if (s.equals("Error!")) {
             if(movieList.size() == 0 || movieList == null ){
-                errorMessage.setText("Error retrieving data");
+                errorMessage.setText(R.string.error2);
                 Toast.makeText(context,"Error! Check if your api key is valid",Toast.LENGTH_SHORT).show();
                 showError();
             }
