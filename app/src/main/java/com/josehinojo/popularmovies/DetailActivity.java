@@ -1,18 +1,23 @@
 package com.josehinojo.popularmovies;
 
-import android.arch.lifecycle.Observer;
-import android.arch.lifecycle.ViewModelProviders;
+import android.content.ContentValues;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Point;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.support.annotation.Nullable;
+import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
@@ -23,10 +28,15 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.josehinojo.popularmovies.database.FavoriteMovie;
-import com.josehinojo.popularmovies.database.MovieDatabase;
+import com.josehinojo.popularmovies.database.FavoritesContract;
+import com.josehinojo.popularmovies.database.FavoritesDbHelper;
 import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -75,8 +85,6 @@ ReviewListAdapter.ListItemClickListener{
     ReviewListAdapter rListAdapter;
     Context context;
     public String id;
-
-    MovieDatabase db;
 
 
     @Override
@@ -148,46 +156,19 @@ ReviewListAdapter.ListItemClickListener{
 
         Picasso.get().load(movie.getBackdropIMG()).into(backdrop);
         Picasso.get().load(movie.getPosterIMG()).into(poster);
-
-        db = MovieDatabase.getDatabaseInstance(context);
-        AddFavoriteMovieViewModelFactory factory = new AddFavoriteMovieViewModelFactory(db,movie.getId());
-        final AddFavoriteMovieViewModel viewModel = ViewModelProviders.of(this,factory).
-                get(AddFavoriteMovieViewModel.class);
-        viewModel.getMovie().observe(this, new Observer<FavoriteMovie>() {
-            @Override
-            public void onChanged(@Nullable FavoriteMovie favoriteMovie) {
-                if (favoriteMovie == null){
-                            clicked = false;
-                            favBtn.setImageResource(R.drawable.heart);
-                            favLabel.setText(R.string.favorite);
-                }else if (favoriteMovie.getId() == movie.getId()){
-                    clicked = true;
-                    favBtn.setImageResource(R.drawable.pinkheart);
-                    favLabel.setText(R.string.unfavorite);
-                }
-            }
-        });
-//        AppExecutors.getInstance().diskIO().execute(new Runnable() {
-//            @Override
-//            public void run() {
-//                runOnUiThread(new Runnable() {
-//                    @Override
-//                    public void run() {
-////                        FavoriteMovie favoriteMovie = db.favoriteDao().getMovieById(movie.getId());
-//
-//                        if (favoriteMovie == null){
-//                            clicked = false;
-//                            favBtn.setImageResource(R.drawable.heart);
-//                            favLabel.setText(R.string.favorite);
-//                        }else if (favoriteMovie.getId() == movie.getId()){
-//                            clicked = true;
-//                            favBtn.setImageResource(R.drawable.pinkheart);
-//                            favLabel.setText(R.string.unfavorite);
-//                        }
-//                    }
-//                });
-//            }
-//        });
+        //condition will be if a movie with that id is not found
+        String[] columns = {FavoritesContract.FavoritesEntry.COLUMN_ID};
+        Uri uri = FavoritesContract.FavoritesEntry.CONTENT_URI;
+        uri = uri.buildUpon().appendPath(Integer.toString(movie.getId())).build();
+            if(getContentResolver().query(uri,null,null,null,null).getCount()>0){
+            clicked = true;
+            favBtn.setImageResource(R.drawable.pinkheart);
+            favLabel.setText(R.string.unfavorite);
+        }else{
+            clicked = false;
+            favBtn.setImageResource(R.drawable.heart);
+            favLabel.setText(R.string.favorite);
+        }
 
     }
 
@@ -255,41 +236,34 @@ ReviewListAdapter.ListItemClickListener{
     }
 
     public void toggleFavorite(View view){
-        int favId = movie.getId();
-        String favTitle = movie.getTitle();
-        String favOverview = movie.getPlot();
-        float favRating = (float)movie.getVoteAverage();
-        final FavoriteMovie favMovie = new FavoriteMovie(favId,favTitle,favOverview,favRating);
+
         if(clicked){
-
-            AppExecutors.getInstance().diskIO().execute(new Runnable() {
-                @Override
-                public void run() {
-                    db.favoriteDao().deleteMovie(favMovie);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            changeImage();
-                        }
-                    });
-                }
-            });
+            removeFromDb(movie.getId());
+            //update ui
+            changeImage();
         }else{
-
-            AppExecutors.getInstance().diskIO().execute(new Runnable() {
-                @Override
-                public void run() {
-                    db.favoriteDao().insertMovie(favMovie);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            changeImage();
-                        }
-                    });
-                }
-            });
+            insertToDb();
+            changeImage();
 
         }
+    }
+
+    public void insertToDb(){
+        ContentValues cv = new ContentValues();
+        cv.put(FavoritesContract.FavoritesEntry.COLUMN_ID,movie.getId());
+        cv.put(FavoritesContract.FavoritesEntry.COLUMN_TITLE,movie.getTitle());
+        cv.put(FavoritesContract.FavoritesEntry.COLUMN_RELEASE,movie.getReleaseDate());
+        cv.put(FavoritesContract.FavoritesEntry.COLUMN_RATING,movie.getVoteAverage());
+        cv.put(FavoritesContract.FavoritesEntry.COLUMN_PLOT,movie.getPlot());
+        Uri uri = getContentResolver().insert(FavoritesContract.FavoritesEntry.CONTENT_URI,cv);
+    }
+
+    public void removeFromDb(int id){
+        Uri uri = FavoritesContract.FavoritesEntry.CONTENT_URI;
+        uri = uri.buildUpon().appendPath(Integer.toString(id)).build();
+        getContentResolver().delete(uri, FavoritesContract.FavoritesEntry.COLUMN_ID + "=" + id
+                ,null);
+
     }
 
     public void changeImage(){

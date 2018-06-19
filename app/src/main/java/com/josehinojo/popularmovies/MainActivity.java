@@ -1,13 +1,16 @@
 package com.josehinojo.popularmovies;
 
-import android.arch.lifecycle.LiveData;
-import android.arch.lifecycle.Observer;
-import android.arch.lifecycle.ViewModelProviders;
+
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
@@ -21,18 +24,17 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.josehinojo.popularmovies.database.FavoriteMovie;
-import com.josehinojo.popularmovies.database.MovieDatabase;
+import com.josehinojo.popularmovies.database.FavoritesContract;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.List;
 
 import static android.content.res.Configuration.ORIENTATION_LANDSCAPE;
 import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
 
-public class MainActivity extends AppCompatActivity implements MovieListAdapter.ListItemClickListener, FavoritesAdapter.ListItemClickListener{
+public class MainActivity extends AppCompatActivity implements MovieListAdapter.ListItemClickListener,
+        LoaderManager.LoaderCallbacks<Cursor>{
 
     private static final String MOVIELIST_KEY = "movieList";
     private static final String FAV_LIST_KEY = "favMovieList";
@@ -42,7 +44,7 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
     static String sortOption = "popular";
     final static String API_QUERY = "?api_key=";
     // v get an api key from themoviedb.org and place it here v
-    final static String API_KEY = "[YOUR_API_KEY_HERE]";
+    final static String API_KEY = "API_KEY_GOES_HERE";
     static int pageNumber = 1;
     static String PAGE_NUMBER = "&language=en-US&page=" + pageNumber;
     final static String IMAGE_URL = "http://image.tmdb.org/t/p/original";
@@ -52,19 +54,17 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
     private static Button againBTN;
 
     private static ArrayList<ParcelableMovie> movieList = new ArrayList<>();
-    private static LiveData<List<FavoriteMovie>> favMovieList;
+    private static ArrayList<ParcelableMovie> favMovieList = new ArrayList<>();
     private  static RecyclerView movie_recycler_view;
     int spancount =2;
-    private  MovieListAdapter mListAdapter;
-
-    public boolean favoritesSelected;
+    public static MovieListAdapter mListAdapter;
+    public static MovieListAdapter favMoviesAdapter;
 
      static ProgressBar loadingIndicator;
 
      static Context context;
+    private static Object thisActivity;
 
-     private MovieDatabase db;
-     private FavoritesAdapter favoritesAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,16 +73,7 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
 
         context = getApplicationContext();
 
-        db = MovieDatabase.getDatabaseInstance(context);
-        MainViewModel viewModel = ViewModelProviders.of(this).get(MainViewModel.class);
-        viewModel.getFavMovies().observe(this, new Observer<List<FavoriteMovie>>() {
-            @Override
-            public void onChanged(@Nullable List<FavoriteMovie> favoriteMovies) {
-                Log.d(MainActivity.class.getSimpleName(),"Retriving movies from LivaData in ViewModel");
-                favoritesAdapter.setMovieList(favoriteMovies);
-            }
-        });
-        favoritesAdapter = new FavoritesAdapter(this);
+        thisActivity = MainActivity.this;
 
         errorMessage = findViewById(R.id.error);
         againBTN = findViewById(R.id.againBTN);
@@ -91,6 +82,8 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
         showLoader();
         mListAdapter = new MovieListAdapter(movieList,this);
         mListAdapter.setContext(context);
+        favMoviesAdapter = new MovieListAdapter(favMovieList,this);
+        favMoviesAdapter.setContext(context);
         /*
         I used the following to help understand gridlayoutmanager better
         https://www.journaldev.com/13792/android-gridlayoutmanager-example
@@ -113,17 +106,13 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
         if(savedInstanceState == null) {
             pageNumber = 1;
             getJson();
-        } else if(savedInstanceState.containsKey("favoritesSelected")){
+        }else if(savedInstanceState.containsKey("favMovies")){
             showMovies();
-            spancount = 1;
-            layoutManager = new GridLayoutManager(getApplicationContext(),spancount);
-            movie_recycler_view.setLayoutManager(layoutManager);
-            movie_recycler_view.setAdapter(favoritesAdapter);
-            favoritesSelected = true;
-        }
-            else if(savedInstanceState.containsKey(MOVIELIST_KEY)){
+            movie_recycler_view.setAdapter(favMoviesAdapter);
+        }else if(savedInstanceState.containsKey(MOVIELIST_KEY)){
             showMovies();
             movieList = savedInstanceState.getParcelableArrayList(MOVIELIST_KEY);
+            mListAdapter.notifyDataSetChanged();
             movie_recycler_view.setAdapter(mListAdapter);
             if(savedInstanceState.containsKey(ERROR_KEY)){
                 errorMessage.setText(savedInstanceState.getString(ERROR_KEY));
@@ -132,7 +121,15 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
         }
 
         mListAdapter.update();
+        favMoviesAdapter.update();
 
+        getSupportLoaderManager().initLoader(0,null,MainActivity.this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        getSupportLoaderManager().restartLoader(0,null,MainActivity.this);
     }
 
     /*
@@ -152,47 +149,26 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
         int itemId = item.getItemId();
 
         if (itemId == R.id.menuSortPopular) {
-            favoritesSelected = false;
-            if(getResources().getConfiguration().orientation == ORIENTATION_PORTRAIT) {
-                spancount = 2;
-            }else if(getResources().getConfiguration().orientation == ORIENTATION_LANDSCAPE) {
-                spancount = 3;
-            }
-            RecyclerView.LayoutManager  layoutManager = new GridLayoutManager(getApplicationContext(),spancount);
-            movie_recycler_view.setLayoutManager(layoutManager);
             pageNumber = 1;
-            movieList.clear();
-            mListAdapter.notifyDataSetChanged();
+            mListAdapter.notFavs();
             movie_recycler_view.setAdapter(mListAdapter);
+            movieList.clear();
             sortOption = "popular";
             ASYNC_URL =  MOVIEDB_BASE_URL + sortOption + API_QUERY + API_KEY + PAGE_NUMBER;
             getJson();
             return true;
 
         }else if(itemId == R.id.menuSortRating){
-            favoritesSelected = false;
-            if(getResources().getConfiguration().orientation == ORIENTATION_PORTRAIT) {
-                spancount = 2;
-            }else if(getResources().getConfiguration().orientation == ORIENTATION_LANDSCAPE) {
-                spancount = 3;
-            }
-            RecyclerView.LayoutManager  layoutManager = new GridLayoutManager(getApplicationContext(),spancount);
-            movie_recycler_view.setLayoutManager(layoutManager);
             pageNumber = 1;
-            movieList.clear();
-            mListAdapter.notifyDataSetChanged();
+            mListAdapter.notFavs();
             movie_recycler_view.setAdapter(mListAdapter);
+            movieList.clear();
             sortOption = "top_rated";
             ASYNC_URL =  MOVIEDB_BASE_URL + sortOption + API_QUERY + API_KEY + PAGE_NUMBER;
             getJson();
             return true;
         }else if(itemId == R.id.menuSortFavorite){
-            favoritesSelected = true;
-            spancount = 1;
-            RecyclerView.LayoutManager  layoutManager = new GridLayoutManager(getApplicationContext(),spancount);
-            movie_recycler_view.setLayoutManager(layoutManager);
-            movieList.clear();
-            movie_recycler_view.setAdapter(favoritesAdapter);
+            movie_recycler_view.setAdapter(favMoviesAdapter);
 
         }
 
@@ -203,16 +179,13 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
     //Went back to my Growing With Google Challenge Scholarship course to review onSaveInstanceState
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        if(favoritesSelected){
-            outState.putBoolean("favoritesSelected",favoritesSelected);
-        }
         if(movieList.size() > 0){
             outState.putParcelableArrayList(MOVIELIST_KEY,movieList);
 
         }
-//        if(favMovieList.size() > 0){
-//            outState.putParcelableArrayList(FAV_LIST_KEY,favMovieList);
-//        }
+        if(movie_recycler_view.getAdapter() == favMoviesAdapter){
+            outState.putParcelableArrayList("favMovies",favMovieList);
+        }
         if(errorMessage.getVisibility() == View.VISIBLE){
             outState.putString(ERROR_KEY,errorMessage.getText().toString());
         }
@@ -228,6 +201,7 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
     public void onListItemClick(ParcelableMovie movie) {
         Intent intent = new Intent(getBaseContext(), DetailActivity.class);
         intent.putExtra("sentMovie", movie);
+
         startActivity(intent);
     }
 
@@ -266,7 +240,6 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
         NetworkInfo netInfo = cm.getActiveNetworkInfo();
 
         if(netInfo != null && netInfo.isConnected()) {
-
 
             PAGE_NUMBER = "&language=en-US&page=" + pageNumber;
             ASYNC_URL = MOVIEDB_BASE_URL + sortOption + API_QUERY + API_KEY + PAGE_NUMBER;
@@ -309,8 +282,55 @@ public class MainActivity extends AppCompatActivity implements MovieListAdapter.
         movie_recycler_view.setVisibility(View.VISIBLE);
     }
 
+
+    @NonNull
     @Override
-    public void onListItemClick(FavoriteMovie movie) {
-        Toast.makeText(context,"Great choice in movies!",Toast.LENGTH_SHORT).show();
+    public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        return new AsyncTaskLoader<Cursor>(this) {
+
+            Cursor cursor = null;
+
+            @Override
+            protected void onStartLoading() {
+                if (cursor != null) {
+                    deliverResult(cursor);
+                } else {
+                    forceLoad();
+                }
+            }
+
+            @Override
+            public Cursor loadInBackground() {
+
+                try {
+                    return getContentResolver().query(FavoritesContract.FavoritesEntry.CONTENT_URI,
+                            null,
+                            null,
+                            null,
+                            FavoritesContract.FavoritesEntry.COLUMN_ID);
+                } catch (Exception e) {
+                    Log.e("AsyncTaskLoader", "Failed to asynchronously load data.");
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+
+            public void deliverResult(Cursor data) {
+                cursor = data;
+                super.deliverResult(data);
+            }
+        };
     }
+
+    @Override
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor data) {
+        favMoviesAdapter.setCursor(data);
+    }
+
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
+        favMoviesAdapter.setCursor(null);
+    }
+
+
 }
