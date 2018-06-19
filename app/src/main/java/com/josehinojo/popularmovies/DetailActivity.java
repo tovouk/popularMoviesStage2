@@ -122,6 +122,7 @@ ReviewListAdapter.ListItemClickListener{
 
 
         movie = (ParcelableMovie) getIntent().getExtras().getParcelable("sentMovie");
+        setMovie(movie);
 
         id = Integer.toString(movie.getId());
         getTrailersAndReviews();
@@ -143,19 +144,6 @@ ReviewListAdapter.ListItemClickListener{
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(size.x, size.y);
         backdrop.setLayoutParams(layoutParams);
 
-        title.setText(movie.getTitle());
-
-        average.setRating((float)movie.getVoteAverage()/2);
-
-        averageVote.setText(Double.toString(movie.getVoteAverage()));
-
-        overview.setText(movie.getPlot());
-
-        releaseDate.setText("Release Date:\n" +
-                movie.getReleaseDate());
-
-        Picasso.get().load(movie.getBackdropIMG()).into(backdrop);
-        Picasso.get().load(movie.getPosterIMG()).into(poster);
         //condition will be if a movie with that id is not found
         String[] columns = {FavoritesContract.FavoritesEntry.COLUMN_ID};
         Uri uri = FavoritesContract.FavoritesEntry.CONTENT_URI;
@@ -172,6 +160,16 @@ ReviewListAdapter.ListItemClickListener{
 
     }
 
+    private void setMovie(ParcelableMovie movie) {
+        title.setText(movie.getTitle());
+        average.setRating((float)movie.getVoteAverage()/2);
+        averageVote.setText(Double.toString(movie.getVoteAverage()));
+        overview.setText(movie.getPlot());
+        releaseDate.setText("Release Date:\n" +
+                movie.getReleaseDate());
+        Picasso.get().load(movie.getBackdropIMG()).into(backdrop);
+        Picasso.get().load(movie.getPosterIMG()).into(poster);
+    }
 
     public void getTrailersAndReviews(){
 
